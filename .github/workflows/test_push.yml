@@ -1,37 +1,61 @@
 name: Server Chan Test Push
 
 on:
-  # 1. 定时触发 (Cron 表达式)
-  # 语法：分 时 日 月 周 (使用 UTC 时间)
-  # 下面这个例子是：每天 UTC 时间 00:00 和 12:00 运行
-  # 北京时间 = UTC + 8，所以这对应北京时间的 08:00 和 20:00
+  # 1. 定时触发 (每 3 分钟)
   schedule:
     - cron: '*/3 * * * *'
   
-  # 2. 手动触发 (方便你随时测试，不用等定时)
-  # 在 GitHub 页面点击 Actions -> 选择 workflow -> Run workflow
+  # 2. 手动触发 (方便随时测试或强制运行)
+  workflow_dispatch:
+    inputs:
+      force_run:
+        description: '即使开关关闭也强制运行一次？'
+        required: false
+        default: 'false'
+        type: boolean
+
+# 【核心修改】在这里定义全局环境变量，作为总开关
+env:
+  # 👇 想开启自动运行，改为 'true'；想关闭，改为 'false'
+  AUTO_RUN_ENABLED: 'true' 
   
+  # 你的 Server 酱 Key (建议还是放在 Settings -> Secrets 里更安全，这里为了演示写在上面)
+  # 如果你之前配在 Secrets 里了，下面这行可以删掉，代码会自动读取 Secrets
+  SEND_KEY: 'YOUR_SEND_KEY_HERE' 
 
 jobs:
-  test-push:
+  run-test:
     runs-on: ubuntu-latest
-    
     steps:
-      - name: 检出代码
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: 设置 Python 环境
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
-      - name: 安装依赖
-        run: |
-          pip install requests
+      - name: Install dependencies
+        run: pip install requests
 
-      - name: 运行测试脚本
-        env:
-          # 将 GitHub Secret 注入为环境变量
-          SERVER_CHAN_KEY: ${{ secrets.SERVER_CHAN_KEY }}
+      # 【核心修改】增加一个判断步骤
+      - name: Check if Auto-Run is Enabled
+        id: check_switch
         run: |
-          python server_test.py
+          echo "当前开关状态: $AUTO_RUN_ENABLED"
+          # 如果是定时触发 (schedule) 且开关为 false，则标记跳过
+          if [[ "${{ github.event_name }}" == "schedule" && "$AUTO_RUN_ENABLED" == "false" ]]; then
+            echo "should_skip=true" >> $GITHUB_OUTPUT
+            echo "⛔ 自动运行已关闭，跳过本次任务。"
+          else
+            echo "should_skip=false" >> $GITHUB_OUTPUT
+            echo "✅ 允许运行。"
+          fi
+
+      - name: Run Server Test Script
+        # 【核心修改】只有当 should_skip 为 false 时才执行
+        # 或者如果是手动触发且选择了 force_run，也可以执行（逻辑可自定义）
+        if: steps.check_switch.outputs.should_skip == 'false'
+        run: python server_test.py
+        env:
+          SEND_KEY: ${{ env.SEND_KEY }}
