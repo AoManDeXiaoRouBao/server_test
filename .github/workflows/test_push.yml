@@ -1,15 +1,11 @@
 name: Server Chan Test Push
 
 on:
-  # 1. 定时触发 (Cron 表达式)
-  # 语法：分 时 日 月 周 (使用 UTC 时间)
-  # 下面这个例子是：每天 UTC 时间 00:00 和 12:00 运行
-  # 北京时间 = UTC + 8，所以这对应北京时间的 08:00 和 20:00
+  # 1. 定时触发 (这是自动运行的核心，千万别删)
   schedule:
-    - cron: '*/3 * * * *'
+    - cron: '*/3 * * * *'  
   
-  # 2. 手动触发 (方便你随时测试，不用等定时)
-  # 在 GitHub 页面点击 Actions -> 选择 workflow -> Run workflow
+  # 2. 手动触发 (建议保留，方便以后调试，不保留也可以)
   workflow_dispatch:
 
 jobs:
