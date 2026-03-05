@@ -14,8 +14,9 @@ def test_server_chan():
     url = f"https://sctapi.ftqq.com/{SEND_KEY}.send"
 
     # 3. 准备参数 
-    title = "NGA 监控脚本测试消息"
-    content = f"{time.strftime('%Y-%m-%d %H:%M:%S')} - 这是一条测试消息，说明 Server 酱配置正确，脚本可以正常发送请求。"
+    current_time = time.strftime('%Y-%m-%d %H:%M:%S')
+    title = f"NGA 监控脚本测试消息 [current_time]"
+    content = f"————这是一条测试消息，说明 Server 酱配置正确，脚本可以正常发送请求。"
 
     params = {
         'title': title,
